@@ -1,80 +1,74 @@
 module.exports = {
     config: {
         name: "info",
-        version: "2.0",
+        aliases: ["botinfo"],
+        version: "1.0",
         author: "Midun",
+        countDown: 5,
         role: 0,
-        usePrefix: true,
-        description: "Show full information about Midun Bot and its owner",
-        category: "For Users",
-        cooldowns: 3
+        shortDescription: "Show bot system & owner info",
+        longDescription: "Displays detailed information about the bot and its owner",
+        category: "info",
+        guide: {
+            en: "{pn}"
+        }
     },
 
-    onStart: async function ({ api, event, threadsData, usersData }) {
+    onStart: async function ({ message, api, event, commands, args, prefix }) {
         try {
-            const botName = "Midun Bot";
-            const adminName = "Midun";
-            const adminFB = "https://facebook.com/your.profile.link"; // Change to your real FB link
-            const prefix = ".";
+            const namebot = "Midun Bot";
+            const PREFIX = ".";
+            const prefixBox = ".";
+            const totalModules = commands?.size || 0;
+            const dateNow = Date.now();
+            const ping = Date.now() - dateNow;
+            const hours = Math.floor(process.uptime() / 3600);
+            const minutes = Math.floor((process.uptime() % 3600) / 60);
+            const seconds = Math.floor(process.uptime() % 60);
 
-            // 🔹 Get data directly from database (no undefined errors)
-            let totalUsers = 0;
-            let totalGroups = 0;
+            // Optional - Safe checks
+            const totalUsers = global?.data?.allUserID?.length || 0;
+            const totalGroups = global?.data?.allThreadID?.length || 0;
 
-            try {
-                totalUsers = await usersData.getAll();
-                totalUsers = Array.isArray(totalUsers) ? totalUsers.length : 0;
-            } catch (err) {
-                totalUsers = 0;
-            }
+            const msg = `🍀----Huiii Puii 👀🤳----🍀
 
-            try {
-                totalGroups = await threadsData.getAll();
-                totalGroups = Array.isArray(totalGroups) ? totalGroups.length : 0;
-            } catch (err) {
-                totalGroups = 0;
-            }
+┏━━•❅•••❈•••❈•••❅•━━┓
+「 ${namebot} 」
+┗━━•❅•••❈•••❈•••❅•━━┛
 
-            // 🔹 Uptime calculation
-            const uptime = process.uptime(); // seconds
-            const days = Math.floor(uptime / (3600 * 24));
-            const hours = Math.floor((uptime % (3600 * 24)) / 3600);
-            const minutes = Math.floor((uptime % 3600) / 60);
-            const seconds = Math.floor(uptime % 60);
+______________________________
 
-            const uptimeString =
-                (days > 0 ? `${days}d ` : "") +
-                (hours > 0 ? `${hours}h ` : "") +
-                (minutes > 0 ? `${minutes}m ` : "") +
-                `${seconds}s`;
+↓↓ 𝗥𝗢𝗕𝗢𝗧 𝗦𝗬𝗦𝗧𝗘𝗠 𝗜𝗡𝗙𝗢 ↓↓
 
-            // 🔹 Bot ping (speed)
-            const start = Date.now();
-            await api.sendTypingIndicator(event.threadID);
-            const ping = Date.now() - start;
+» Prefix system: ${PREFIX}
+» Prefix box: ${prefixBox}
+» Total Modules: ${totalModules}
+» Ping: ${ping}ms
 
-            // 🔹 Final message
-            const message =
-`📢 ${botName} — Information
-━━━━━━━━━━━━━━━━━━━━
-👑 Owner: ${adminName}
-🔗 Owner FB: ${adminFB}
-📍 Prefix: ${prefix}
+______________________________
 
-📊 Stats:
-👥 Total Users: ${totalUsers}
-💬 Total Groups: ${totalGroups}
+↓↓ 𝗥𝗢𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢 ↓↓
 
-⏳ Uptime: ${uptimeString}
-⚡ Ping: ${ping}ms
-━━━━━━━━━━━━━━━━━━━━
-© 2025 ${adminName} | All rights reserved`;
+NAME : Furushim Islam Midun
+Owner Id link: ☞ https://www.facebook.com/share/173egNEVhm/
 
-            api.sendMessage(message, event.threadID, event.messageID);
+______________________________
+
+↓↓ 𝗥𝗼𝗯𝗼𝘁 𝗮𝗰𝘁𝗶𝘃𝗲 𝘁𝗶𝗺𝗲 ↓↓
+
+${hours}h : ${minutes}m : ${seconds}s
+
+______________________________
+
+» TOTAL USERS: ${totalUsers}
+» TOTAL GROUP: ${totalGroups}
+______________________________`;
+
+            message.reply(msg);
 
         } catch (error) {
-            api.sendMessage("❌ An error occurred while fetching bot info. Please try again later.", event.threadID, event.messageID);
-            console.error("[INFO COMMAND ERROR]:", error);
+            message.reply("❌ An error occurred while fetching bot info. (Safe mode enabled)");
+            console.error(error);
         }
     }
 };
