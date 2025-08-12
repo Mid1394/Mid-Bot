@@ -1,64 +1,80 @@
 module.exports = {
     config: {
         name: "info",
-        version: "1.0",
+        version: "2.0",
         author: "Midun",
-        role: 4,
+        role: 0,
         usePrefix: true,
-        description: "Give admin and bot information",
-        category: "For users",
+        description: "Show full information about Midun Bot and its owner",
+        category: "For Users",
         cooldowns: 3
     },
-    onStart: async function({ api, event, args, globalData, commands }) {
-        const namebot = "Midun Bot";
-        const prefix = ".";
-        const dateNow = Date.now();
 
-        // Uptime calculation
-        const uptime = process.uptime();
-        const hours = Math.floor(uptime / 3600);
-        const minutes = Math.floor((uptime % 3600) / 60);
-        const seconds = Math.floor(uptime % 60);
+    onStart: async function ({ api, event, threadsData, usersData }) {
+        try {
+            const botName = "Midun Bot";
+            const adminName = "Midun";
+            const adminFB = "https://facebook.com/your.profile.link"; // Change to your real FB link
+            const prefix = ".";
 
-        // Message content
-        const msg = `🍀---- ${namebot} ----🍀
+            // 🔹 Get data directly from database (no undefined errors)
+            let totalUsers = 0;
+            let totalGroups = 0;
 
-┏━━•❅•••❈•••❈•••❅•━━┓
+            try {
+                totalUsers = await usersData.getAll();
+                totalUsers = Array.isArray(totalUsers) ? totalUsers.length : 0;
+            } catch (err) {
+                totalUsers = 0;
+            }
 
-「 ${namebot} 」
+            try {
+                totalGroups = await threadsData.getAll();
+                totalGroups = Array.isArray(totalGroups) ? totalGroups.length : 0;
+            } catch (err) {
+                totalGroups = 0;
+            }
 
-┗━━•❅•••❈•••❈•••❅•━━┛ 
+            // 🔹 Uptime calculation
+            const uptime = process.uptime(); // seconds
+            const days = Math.floor(uptime / (3600 * 24));
+            const hours = Math.floor((uptime % (3600 * 24)) / 3600);
+            const minutes = Math.floor((uptime % 3600) / 60);
+            const seconds = Math.floor(uptime % 60);
 
-______________________________
+            const uptimeString =
+                (days > 0 ? `${days}d ` : "") +
+                (hours > 0 ? `${hours}h ` : "") +
+                (minutes > 0 ? `${minutes}m ` : "") +
+                `${seconds}s`;
 
-↓↓ BOT SYSTEM INFO ↓↓
+            // 🔹 Bot ping (speed)
+            const start = Date.now();
+            await api.sendTypingIndicator(event.threadID);
+            const ping = Date.now() - start;
 
-» Prefix System: Enabled
-» Prefix: ${prefix}
-» Total Commands: ${commands.size}
-» Ping: ${Date.now() - dateNow}ms
+            // 🔹 Final message
+            const message =
+`📢 ${botName} — Information
+━━━━━━━━━━━━━━━━━━━━
+👑 Owner: ${adminName}
+🔗 Owner FB: ${adminFB}
+📍 Prefix: ${prefix}
 
-______________________________
+📊 Stats:
+👥 Total Users: ${totalUsers}
+💬 Total Groups: ${totalGroups}
 
-↓↓ BOT OWNER INFO ↓↓
+⏳ Uptime: ${uptimeString}
+⚡ Ping: ${ping}ms
+━━━━━━━━━━━━━━━━━━━━
+© 2025 ${adminName} | All rights reserved`;
 
-Name: Furushim Islam Midun
-Owner ID: https://www.facebook.com/share/173egNEVhm/
+            api.sendMessage(message, event.threadID, event.messageID);
 
-______________________________
-
-----↓↓ BOT ACTIVE TIME ↓↓----
-
-${hours}h : ${minutes}m : ${seconds}s
-
-______________________________
-
-» Total Users: ${globalData.allUserID.length}
-» Total Groups: ${globalData.allThreadID.length}
-
-______________________________`;
-
-        // Send message
-        api.sendMessage(msg, event.threadID, event.messageID);
+        } catch (error) {
+            api.sendMessage("❌ An error occurred while fetching bot info. Please try again later.", event.threadID, event.messageID);
+            console.error("[INFO COMMAND ERROR]:", error);
+        }
     }
 };
