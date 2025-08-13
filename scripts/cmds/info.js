@@ -6,45 +6,50 @@ module.exports = {
     config: {
         name: "info",
         aliases: ["botinfo"],
-        version: "3.0",
+        version: "4.5",
         author: "Midun",
         countDown: 5,
         role: 0,
         shortDescription: "Show bot system & owner info",
-        longDescription: "Displays bot, owner, and performance info",
         category: "info",
-        guide: { en: "{pn}" }
     },
 
     onStart: async function ({ message, api, event }) {
         try {
-            const start = Date.now();
+            // Detect bot version from package.json
+            let botVersion = "Unknown";
+            try {
+                const pkg = require(path.join(process.cwd(), "package.json"));
+                botVersion = pkg.version || "Unknown";
+            } catch { /* ignore */ }
+
+            // Calculate ping
+            const startPing = Date.now();
             await api.getUserInfo(event.senderID);
-            const ping = Date.now() - start;
+            const ping = Date.now() - startPing;
 
-            // Fake values if not available
-            const totalModules = 15; // change manually if needed
-            const totalUsers = 320;  // change manually if needed
-            const totalGroups = 12;  // change manually if needed
+            // Stats
+            let totalModules = global.client?.commands?.size || 0;
+            let totalUsers = global.data?.allUserID?.length || 0;
+            let totalGroups = global.data?.allThreadID?.length || 0;
 
+            // Uptime
             const hours = Math.floor(process.uptime() / 3600);
             const minutes = Math.floor((process.uptime() % 3600) / 60);
             const seconds = Math.floor(process.uptime() % 60);
 
-            const namebot = "Midun Bot";
-            const PREFIX = ".";
-            const prefixBox = ".";
-
+            // Info message
             const msg = `🍀----Huiii Puii 👀🤳----🍀
 
 ┏━━•❅•••❈•••❈•••❅•━━┓
-「 ${namebot} 」
+「 Midun Bot 」
 ┗━━•❅•••❈•••❈•••❅•━━┛
 
 ↓↓ 𝗥𝗢𝗕𝗢𝗧 𝗦𝗬𝗦𝗧𝗘𝗠 𝗜𝗡𝗙𝗢 ↓↓
 
-» Prefix system: ${PREFIX}
-» Prefix box: ${prefixBox}
+» Prefix system: .
+» Prefix box: .
+» Bot Version: ${botVersion}
 » Total Modules: ${totalModules}
 » Ping: ${ping}ms
 
@@ -63,20 +68,35 @@ ${hours}h : ${minutes}m : ${seconds}s
 » TOTAL GROUPS: ${totalGroups}
 ______________________________`;
 
-            // Download profile picture to temp folder
+            // Facebook Profile Picture
             const imgPath = path.join(__dirname, "owner.jpg");
-            const ownerPicURL = "https://graph.facebook.com/100070726067257/picture?height=500&width=500";
-            const imgData = await axios.get(ownerPicURL, { responseType: "arraybuffer" });
-            fs.writeFileSync(imgPath, Buffer.from(imgData.data, "binary"));
+            const ownerPicURL = `https://graph.facebook.com/100070726067257/picture?height=800&width=800&access_token=6628568379%7C2a17c5bd1eec4a6d5b0706e1d6e0c00f`;
 
+            try {
+                const response = await axios.get(ownerPicURL, {
+                    responseType: "arraybuffer",
+                    maxRedirects: 5
+                });
+                fs.writeFileSync(imgPath, Buffer.from(response.data, "binary"));
+            } catch (err) {
+                console.error("PFP fetch failed:", err.message);
+                // fallback image
+                const fallback = "https://i.imgur.com/uHcVv.png";
+                const res = await axios.get(fallback, { responseType: "arraybuffer" });
+                fs.writeFileSync(imgPath, Buffer.from(res.data, "binary"));
+            }
+
+            // Send message with attachment
             message.reply({
                 body: msg,
                 attachment: fs.createReadStream(imgPath)
-            }, () => fs.unlinkSync(imgPath)); // delete after sending
+            }, () => {
+                fs.unlinkSync(imgPath); // cleanup
+            });
 
         } catch (error) {
-            console.error(error);
-            message.reply("❌ Bot info command failed. Check your internet or API permissions.");
+            console.error("Error in .info:", error);
+            message.reply("❌ Could not fetch bot info, but bot is still running fine.");
         }
     }
 };
